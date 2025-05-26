@@ -1,0 +1,5 @@
+void addToHead(Node*& head, Record r) Добавляет новый элемент в начало списка
+void addToTail(Node*& head, Record r) Добавляет новый элемент в конец списка
+void deleteByName(Node*& head, string name) Удаляет элемент из списка по имени
+void printList(Node* head)  Выводит все элементы списка на экран
+
