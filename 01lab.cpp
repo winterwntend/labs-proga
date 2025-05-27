@@ -34,6 +34,39 @@ void addToTail(Node*& head, Record r) {
     cur->next = newNode;
 }
 
+// Добавление перед указанным именем
+void addBefore(Node*& head, string targetName, Record r) {
+    if (!head) return;
+    
+    if (head->data.name == targetName) {
+        addToHead(head, r);
+        return;
+    }
+    
+    Node* cur = head;
+    while (cur->next && cur->next->data.name != targetName)
+        cur = cur->next;
+    
+    if (cur->next) {
+        Node* newNode = new Node{r, cur->next};
+        cur->next = newNode;
+    }
+}
+
+// Добавление после указанного имени
+void addAfter(Node*& head, string targetName, Record r) {
+    if (!head) return;
+    
+    Node* cur = head;
+    while (cur && cur->data.name != targetName)
+        cur = cur->next;
+    
+    if (cur) {
+        Node* newNode = new Node{r, cur->next};
+        cur->next = newNode;
+    }
+}
+
 // Удаление по имени
 void deleteByName(Node*& head, string name) {
     if (!head) return;
@@ -72,7 +105,17 @@ int main() {
     addToTail(head, {"Вася", 22, 95.0});
     addToTail(head, {"Катя", 19, 78.0});
 
-    cout << "Список:\n";
+    cout << "Исходный список:\n";
+    printList(head);
+
+    // Добавляем перед Васей
+    addBefore(head, "Вася", {"Петя", 21, 85.5});
+    cout << "После добавления Пети перед Васей:\n";
+    printList(head);
+
+    // Добавляем после Кати
+    addAfter(head, "Катя", {"Оля", 18, 92.0});
+    cout << "После добавления Оли после Кати:\n";
     printList(head);
 
     cout << "Удаляем Васю:\n";    
