@@ -1,297 +1,288 @@
 #include <iostream>
-using namespace std;
+#include <vector>
 
-// === Класс vect (вектор) ===
-class vect {
-private:
-    int dim;        // размерность
-    double* b;      // массив элементов
-    int num;        // номер объекта
-    static int count; // общий счётчик объектов
+using std::cout;
+using std::endl;
+
+namespace LinearAlgebra {
+
+class Matrix;
+
+class Vector {
+    int size;
+    std::vector<double> data;
+    int id;
+    static int counter;
 
 public:
-    // Статический метод для получения количества объектов
-    static int getCount() { return count; }
-
-    // Конструктор
-    vect(int d = 2) : dim(d), num(++count) {
-        b = new double[dim];
-        for (int i = 0; i < dim; ++i)
-            b[i] = 0;
-        cout << "vect(): создан вектор #" << num << endl;
+    explicit Vector(int n = 1) : size(n), data(n, 0.0), id(++counter) {
+        cout << "Создан вектор №" << id << " размерности " << size << endl;
     }
 
-    // Деструктор
-    ~vect() {
-        delete[] b;
-        cout << "~vect(): удален вектор #" << num << endl;
+    Vector(const Vector& other) : size(other.size), data(other.data), id(++counter) {
+        cout << "Создана копия вектора №" << other.id << " как вектор №" << id << endl;
     }
 
-    // Получить элемент
-    double get(int i) const {
-        return b[i];
+    ~Vector() {
+        cout << "Удален вектор №" << id << endl;
     }
 
-    // Задать элемент
-    void set(int i, double val) {
-        b[i] = val;
-    }
-
-    // v + v
-    vect operator+(const vect& v) const {
-        vect res(dim);
-        for (int i = 0; i < dim; ++i)
-            res.set(i, b[i] + v.get(i));
-        cout << "operator+ (vect): #" << num << " + #" << v.num << endl;
-        return res;
-    }
-
-    // v - v
-    vect operator-(const vect& v) const {
-        vect res(dim);
-        for (int i = 0; i < dim; ++i)
-            res.set(i, b[i] - v.get(i));
-        cout << "operator- (vect): #" << num << " - #" << v.num << endl;
-        return res;
-    }
-
-    // -v
-    vect operator-() const {
-        vect res(dim);
-        for (int i = 0; i < dim; ++i)
-            res.set(i, -b[i]);
-        cout << "operator- (vect): -#" << num << endl;
-        return res;
-    }
-
-    // v * v (скалярное произведение)
-    double operator*(const vect& v) const {
-        double res = 0;
-        for (int i = 0; i < dim; ++i)
-            res += b[i] * v.get(i);
-        cout << "operator* (vect*vect): #" << num << " * #" << v.num << endl;
-        return res;
-    }
-
-    // k * v (внешний оператор)
-    friend vect operator*(double k, const vect& v);
-
-    // v = v
-    vect& operator=(const vect& v) {
-        if (this == &v) return *this;
-        if (dim != v.dim) {
-            delete[] b;
-            dim = v.dim;
-            b = new double[dim];
+    Vector& operator=(const Vector& rhs) {
+        if (this != &rhs) {
+            size = rhs.size;
+            data = rhs.data;
         }
-        for (int i = 0; i < dim; ++i)
-            b[i] = v.get(i);
-        cout << "operator= (vect): #" << num << " = #" << v.num << endl;
+        cout << "Вектор №" << id << " = вектору №" << rhs.id << endl;
         return *this;
     }
 
-    // Вывод вектора
+    Vector operator+(const Vector& rhs) const {
+        cout << "Вектор №" << id << " + вектор №" << rhs.id << endl;
+        Vector result(size);
+        for (int i = 0; i < size; ++i) {
+            result.data[i] = data[i] + rhs.data[i];
+        }
+        return result;
+    }
+
+    Vector operator-(const Vector& rhs) const {
+        cout << "Вектор №" << id << " - вектор №" << rhs.id << endl;
+        Vector result(size);
+        for (int i = 0; i < size; ++i) {
+            result.data[i] = data[i] - rhs.data[i];
+        }
+        return result;
+    }
+
+    Vector operator-() const {
+        cout << "-вектор №" << id << endl;
+        Vector result(size);
+        for (int i = 0; i < size; ++i) {
+            result.data[i] = -data[i];
+        }
+        return result;
+    }
+
+    double operator*(const Vector& rhs) const {
+        cout << "Вектор №" << id << " * вектор №" << rhs.id << " (скалярное)" << endl;
+        double product = 0.0;
+        for (int i = 0; i < size; ++i) {
+            product += data[i] * rhs.data[i];
+        }
+        return product;
+    }
+
+    friend Vector operator*(double scalar, const Vector& vec);
+    friend Vector operator*(const Matrix& mat, const Vector& vec);
+
+    void set(int index, double value) {
+        if (index >= 0 && index < size) {
+            data[index] = value;
+        }
+    }
+
     void print() const {
-        cout << "[ ";
-        for (int i = 0; i < dim; ++i)
-            cout << b[i] << " ";
+        cout << "Вектор №" << id << ": [";
+        for (int i = 0; i < size; ++i) {
+            cout << data[i];
+            if (i < size - 1) cout << ", ";
+        }
         cout << "]" << endl;
     }
 };
 
-int vect::count = 0;
+int Vector::counter = 0;
 
-// Реализация внешнего оператора k * v
-vect operator*(double k, const vect& v) {
-    vect res(v.dim);
-    for (int i = 0; i < v.dim; ++i)
-        res.set(i, k * v.get(i));
-    cout << "operator* (double*vect): " << k << " * #" << v.num << endl;
-    return res;
-}
-
-// === Класс matr (матрица) ===
-class matr {
-private:
-    int dim;        // размерность матрицы
-    double* a;      // одномерный массив под матрицу
-    int num;        // номер объекта
-    static int count;
+class Matrix {
+    int dimension;
+    std::vector<double> elements;
+    int id;
+    static int counter;
 
 public:
-    static int getCount() { return count; }
-
-    // Конструктор
-    matr(int d = 2) : dim(d), num(++count) {
-        a = new double[dim * dim];
-        for (int i = 0; i < dim * dim; ++i)
-            a[i] = 0;
-        cout << "matr(): создана матрица #" << num << endl;
+    explicit Matrix(int n = 1) : dimension(n), elements(n*n, 0.0), id(++counter) {
+        cout << "Создана матрица №" << id << " размерности " << dimension << "x" << dimension << endl;
     }
 
-    // Деструктор
-    ~matr() {
-        delete[] a;
-        cout << "~matr(): удалена матрица #" << num << endl;
+    Matrix(const Matrix& other) : dimension(other.dimension), elements(other.elements), id(++counter) {
+        cout << "Создана копия матрицы №" << other.id << " как матрица №" << id << endl;
     }
 
-    // Получить элемент матрицы
-    double get(int i, int j) const {
-        return a[i * dim + j];
+    ~Matrix() {
+        cout << "Удалена матрица №" << id << endl;
     }
 
-    // Задать элемент матрицы
-    void set(int i, int j, double val) {
-        a[i * dim + j] = val;
-    }
-
-    // m + m
-    matr operator+(const matr& m) const {
-        matr res(dim);
-        for (int i = 0; i < dim * dim; ++i)
-            res.a[i] = a[i] + m.a[i];
-        cout << "operator+ (matr): #" << num << " + #" << m.num << endl;
-        return res;
-    }
-
-    // m - m
-    matr operator-(const matr& m) const {
-        matr res(dim);
-        for (int i = 0; i < dim * dim; ++i)
-            res.a[i] = a[i] - m.a[i];
-        cout << "operator- (matr): #" << num << " - #" << m.num << endl;
-        return res;
-    }
-
-    // -m
-    matr operator-() const {
-        matr res(dim);
-        for (int i = 0; i < dim * dim; ++i)
-            res.a[i] = -a[i];
-        cout << "operator- (matr): -#" << num << endl;
-        return res;
-    }
-
-    // m * m
-    matr operator*(const matr& m) const {
-        matr res(dim);
-        for (int i = 0; i < dim; ++i)
-            for (int j = 0; j < dim; ++j) {
-                double sum = 0;
-                for (int k = 0; k < dim; ++k)
-                    sum += get(i, k) * m.get(k, j);
-                res.set(i, j, sum);
-            }
-        cout << "operator* (matr*matr): #" << num << " * #" << m.num << endl;
-        return res;
-    }
-
-    // k * m
-    friend matr operator*(double k, const matr& m);
-
-    // m = m
-    matr& operator=(const matr& m) {
-        if (this == &m) return *this;
-        if (dim != m.dim) {
-            delete[] a;
-            dim = m.dim;
-            a = new double[dim * dim];
+    Matrix& operator=(const Matrix& rhs) {
+        if (this != &rhs) {
+            dimension = rhs.dimension;
+            elements = rhs.elements;
         }
-        for (int i = 0; i < dim * dim; ++i)
-            a[i] = m.a[i];
-        cout << "operator= (matr): #" << num << " = #" << m.num << endl;
+        cout << "Матрица №" << id << " = матрице №" << rhs.id << endl;
         return *this;
     }
 
-    // m * v
-    vect operator*(const vect& v) const {
-        vect res(v.getCount());
-        for (int i = 0; i < v.getCount(); ++i)
-            for (int j = 0; j < dim; ++j)
-                res.set(i, res.get(i) + get(i, j) * v.get(j));
-        cout << "operator* (matr*vect): #" << num << " * вектор\n";
-        return res;
+    Matrix operator+(const Matrix& rhs) const {
+        cout << "Матрица №" << id << " + матрица №" << rhs.id << endl;
+        Matrix result(dimension);
+        for (int i = 0; i < dimension*dimension; ++i) {
+            result.elements[i] = elements[i] + rhs.elements[i];
+        }
+        return result;
     }
 
-    // Вывод матрицы
+    Matrix operator-(const Matrix& rhs) const {
+        cout << "Матрица №" << id << " - матрица №" << rhs.id << endl;
+        Matrix result(dimension);
+        for (int i = 0; i < dimension*dimension; ++i) {
+            result.elements[i] = elements[i] - rhs.elements[i];
+        }
+        return result;
+    }
+
+    Matrix operator-() const {
+        cout << "-матрица №" << id << endl;
+        Matrix result(dimension);
+        for (int i = 0; i < dimension*dimension; ++i) {
+            result.elements[i] = -elements[i];
+        }
+        return result;
+    }
+
+    Matrix operator*(const Matrix& rhs) const {
+        cout << "Матрица №" << id << " * матрица №" << rhs.id << endl;
+        Matrix result(dimension);
+        for (int i = 0; i < dimension; ++i) {
+            for (int j = 0; j < dimension; ++j) {
+                double sum = 0;
+                for (int k = 0; k < dimension; ++k) {
+                    sum += elements[i*dimension + k] * rhs.elements[k*dimension + j];
+                }
+                result.elements[i*dimension + j] = sum;
+            }
+        }
+        return result;
+    }
+
+    friend Matrix operator*(double scalar, const Matrix& mat);
+    friend Vector operator*(const Matrix& mat, const Vector& vec);
+
+    void set(int row, int col, double value) {
+        if (row >= 0 && row < dimension && col >= 0 && col < dimension) {
+            elements[row*dimension + col] = value;
+        }
+    }
+
     void print() const {
-        cout << "Матрица #" << num << ":" << endl;
-        for (int i = 0; i < dim; ++i) {
-            for (int j = 0; j < dim; ++j)
-                cout << get(i, j) << " ";
-            cout << endl;
+        cout << "Матрица №" << id << ":" << endl;
+        for (int i = 0; i < dimension; ++i) {
+            cout << "[";
+            for (int j = 0; j < dimension; ++j) {
+                cout << elements[i*dimension + j];
+                if (j < dimension - 1) cout << ", ";
+            }
+            cout << "]" << endl;
         }
     }
 };
 
-int matr::count = 0;
+int Matrix::counter = 0;
 
-// Реализация внешнего оператора k * m
-matr operator*(double k, const matr& m) {
-    matr res(m.dim);
-    for (int i = 0; i < m.dim; ++i)
-        for (int j = 0; j < m.dim; ++j)
-            res.set(i, j, k * m.get(i, j));
-    cout << "operator* (double*matr): " << k << " * #" << m.num << endl;
-    return res;
+Vector operator*(double scalar, const Vector& vec) {
+    cout << scalar << " * вектор №" << vec.id << endl;
+    Vector result(vec.size);
+    for (int i = 0; i < vec.size; ++i) {
+        result.data[i] = scalar * vec.data[i];
+    }
+    return result;
 }
 
-// === Функция main ===
+Matrix operator*(double scalar, const Matrix& mat) {
+    cout << scalar << " * матрица №" << mat.id << endl;
+    Matrix result(mat.dimension);
+    for (int i = 0; i < mat.dimension*mat.dimension; ++i) {
+        result.elements[i] = scalar * mat.elements[i];
+    }
+    return result;
+}
+
+Vector operator*(const Matrix& mat, const Vector& vec) {
+    cout << "Матрица №" << mat.id << " * вектор №" << vec.id << endl;
+    Vector result(mat.dimension);
+    for (int i = 0; i < mat.dimension; ++i) {
+        result.data[i] = 0;
+        for (int j = 0; j < mat.dimension; ++j) {
+            result.data[i] += mat.elements[i*mat.dimension + j] * vec.data[j];
+        }
+    }
+    return result;
+}
+
+} // namespace LinearAlgebra
+
 int main() {
-    // Создаём векторы
-    vect v1(2), v2(2);
-    v1.set(0, 1); v1.set(1, 2);
-    v2.set(0, 3); v2.set(1, 4);
+    using namespace LinearAlgebra;
 
-    // Создаём матрицы
-    matr m1(2), m2(2);
-    m1.set(0, 0, 1); m1.set(0, 1, 2);
-    m1.set(1, 0, 3); m1.set(1, 1, 4);
-
-    m2.set(0, 0, 5); m2.set(0, 1, 6);
-    m2.set(1, 0, 7); m2.set(1, 1, 8);
-
-    // Примеры операций
-    cout << "\n=== Примеры операций ===\n";
-
-    vect v3 = v1 + v2;
-    cout << "v1 + v2 = "; v3.print();
-
-    vect v4 = v1 - v2;
-    cout << "v1 - v2 = "; v4.print();
-
+    cout << "\n=== Работа с векторами ===" << endl;
+    Vector v1(3), v2(3), v3(3);
+    
+    v1.set(0, 1.0); v1.set(1, 2.0); v1.set(2, 3.0);
+    v2.set(0, 4.0); v2.set(1, 5.0); v2.set(2, 6.0);
+    
+    v1.print();
+    v2.print();
+    
+    v3 = v1 + v2;
+    v3.print();
+    
+    v3 = v1 - v2;
+    v3.print();
+    
+    v3 = -v1;
+    v3.print();
+    
     double dot = v1 * v2;
-    cout << "v1 * v2 = " << dot << endl;
+    cout << "Скалярное произведение: " << dot << endl;
+    
+    v3 = 2.5 * v1;
+    v3.print();
 
-    vect v5 = -v1;
-    cout << "-v1 = "; v5.print();
+    cout << "\n=== Работа с матрицами ===" << endl;
+    Matrix m1(2), m2(2), m3(2);
+    
+    m1.set(0, 0, 1.0); m1.set(0, 1, 2.0);
+    m1.set(1, 0, 3.0); m1.set(1, 1, 4.0);
+    
+    m2.set(0, 0, 5.0); m2.set(0, 1, 6.0);
+    m2.set(1, 0, 7.0); m2.set(1, 1, 8.0);
+    
+    m1.print();
+    m2.print();
+    
+    m3 = m1 + m2;
+    m3.print();
+    
+    m3 = m1 - m2;
+    m3.print();
+    
+    m3 = -m1;
+    m3.print();
+    
+    m3 = m1 * m2;
+    m3.print();
+    
+    m3 = 0.5 * m1;
+    m3.print();
 
-    vect v6 = 5.0 * v2;
-    cout << "5.0 * v2 = "; v6.print();
-
-    v6 = v2;
-    cout << "v6 = v2 -> v6 = "; v6.print();
-
-    matr m3 = m1 + m2;
-    cout << "\nm1 + m2 =\n"; m3.print();
-
-    matr m4 = m1 - m2;
-    cout << "\nm1 - m2 =\n"; m4.print();
-
-    matr m5 = -m1;
-    cout << "\n-m1 =\n"; m5.print();
-
-    matr m6 = m1 * m2;
-    cout << "\nm1 * m2 =\n"; m6.print();
-
-    matr m7 = 2.0 * m1;
-    cout << "\n2.0 * m1 =\n"; m7.print();
-
-    matr m8 = m1;
-    cout << "\nm8 = m1 -> m8:\n"; m8.print();
-
-    vect v7 = m1 * v1;
-    cout << "\nm1 * v1 = "; v7.print();
+    cout << "\n=== Умножение матрицы на вектор ===" << endl;
+    Vector v4(2);
+    v4.set(0, 1.0); v4.set(1, 2.0);
+    
+    v4.print();
+    m1.print();
+    
+    Vector v5 = m1 * v4;
+    v5.print();
 
     return 0;
 }
+        
