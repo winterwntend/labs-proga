@@ -1,19 +1,4 @@
 
- 
-Search Gists
-Search...
-All gists
-Back to GitHub
-@w1lkaz
-w1lkaz/gist:09585286ec45b3116468460aff9624d4 Secret
-Created 36 minutes ago • Report abuse
-Code
-Revisions
-1
-Clone this repository at &lt;script src=&quot;https://gist.github.com/w1lkaz/09585286ec45b3116468460aff9624d4.js&quot;&gt;&lt;/script&gt;
-<script src="https://gist.github.com/w1lkaz/09585286ec45b3116468460aff9624d4.js"></script>
-kamilla
-gistfile1.txt
 #include <iostream>
 #include <cmath>
 #include <vector>
