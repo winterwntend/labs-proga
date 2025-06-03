@@ -151,15 +151,28 @@ public:
     Matrix operator*(const Matrix& rhs) const {
         cout << "Матрица №" << id << " * матрица №" << rhs.id << endl;
         Matrix result(dimension);
+        
+        // Используем двойные указатели
+        const double* pThis = elements.data();
+        const double* pRhs = rhs.elements.data();
+        double* pRes = result.elements.data();
+        
         for (int i = 0; i < dimension; ++i) {
             for (int j = 0; j < dimension; ++j) {
-                double sum = 0;
+                double sum = 0.0;
+                const double* pRow = pThis + i * dimension;
+                const double* pCol = pRhs + j;
+                
                 for (int k = 0; k < dimension; ++k) {
-                    sum += elements[i*dimension + k] * rhs.elements[k*dimension + j];
+                    sum += (*pRow) * (*pCol);
+                    pRow++;
+                    pCol += dimension;
                 }
-                result.elements[i*dimension + j] = sum;
+                
+                *pRes++ = sum;
             }
         }
+        
         return result;
     }
 
@@ -208,12 +221,24 @@ Matrix operator*(double scalar, const Matrix& mat) {
 Vector operator*(const Matrix& mat, const Vector& vec) {
     cout << "Матрица №" << mat.id << " * вектор №" << vec.id << endl;
     Vector result(mat.dimension);
+    
+    // Используем двойные указатели
+    const double* pMat = mat.elements.data();
+    const double* pVec = vec.data.data();
+    double* pRes = result.data.data();
+    
     for (int i = 0; i < mat.dimension; ++i) {
-        result.data[i] = 0;
+        double sum = 0.0;
+        const double* pRow = pMat + i * mat.dimension;
+        const double* pElem = pVec;
+        
         for (int j = 0; j < mat.dimension; ++j) {
-            result.data[i] += mat.elements[i*mat.dimension + j] * vec.data[j];
+            sum += (*pRow++) * (*pElem++);
         }
+        
+        *pRes++ = sum;
     }
+    
     return result;
 }
 
@@ -285,4 +310,3 @@ int main() {
 
     return 0;
 }
-        
