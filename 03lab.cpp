@@ -1,7 +1,7 @@
-
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <memory>
 
 using std::cout;
 using std::endl;
@@ -10,139 +10,164 @@ namespace Geometry {
 
 const double PI = 3.14159265358979323846;
 
-// Абстрактный класс Точка
-class Point {
+// Базовый абстрактный класс Shape
+class Shape {
 protected:
-    double x;
-    double y;
     int id;
     static int counter;
 public:
-    Point(double x = 0.0, double y = 0.0) : x(x), y(y), id(++counter) {
-        cout << "Создана точка #" << id << " (" << x << ", " << y << ")" << endl;
+    Shape() : id(++counter) {
+        cout << "Создан объект Shape #" << id << endl;
     }
     
-    virtual ~Point() {
-        cout << "Удалена точка #" << id << endl;
+    virtual ~Shape() {
+        cout << "Удален объект Shape #" << id << endl;
     }
     
-    // Чисто виртуальные методы (абстрактный класс)
     virtual void draw() const = 0;
     virtual void hide() const = 0;
     virtual void move(double dx, double dy) = 0;
     virtual void rotate(double angle) = 0;
     
-    // Методы с разным уровнем доступа
-    double getX() const { return x; }       // public доступ к x
-    double getY() const { return y; }       // public доступ к y
-    int getId() const { return id; }        // public доступ к id
-protected:
-    void setX(double newX) { x = newX; }   // protected доступ
-    void setY(double newY) { y = newY; }   // protected доступ
-private:
-    // Приватный метод для демонстрации регламентации доступа
-    void privateMethod() {
-        cout << "Приватный метод точки #" << id << endl;
-    }
+    int getId() const { return id; }
 };
 
-int Point::counter = 0;
+int Shape::counter = 0;
 
-// Класс Линия
-class Line : public Point {
+// Класс Point наследуется от Shape
+class Point : public Shape {
 protected:
-    double x2;
-    double y2;
+    double x;
+    double y;
 public:
-    Line(double x1, double y1, double x2, double y2) 
-        : Point(x1, y1), x2(x2), y2(y2) {
-        cout << "Создана линия #" << getId() << " от (" << x << "," << y 
-             << ") до (" << x2 << "," << y2 << ")" << endl;
+    Point(double x = 0.0, double y = 0.0) : x(x), y(y) {
+        cout << "Создана точка #" << id << " (" << x << ", " << y << ")" << endl;
+    }
+    
+    ~Point() override {
+        cout << "Удалена точка #" << id << endl;
     }
     
     void draw() const override {
-        cout << "Рисуем линию #" << getId() << " от (" << x << "," << y 
-             << ") до (" << x2 << "," << y2 << ")" << endl;
+        cout << "Рисуем точку #" << id << " (" << x << ", " << y << ")" << endl;
     }
     
     void hide() const override {
-        cout << "Скрываем линию #" << getId() << " от (" << x << "," << y 
-             << ") до (" << x2 << "," << y2 << ")" << endl;
+        cout << "Скрываем точку #" << id << endl;
     }
     
     void move(double dx, double dy) override {
-        cout << "Перемещение линии #" << getId() << " на (" << dx << ", " << dy << ")" << endl;
         x += dx;
         y += dy;
-        x2 += dx;
-        y2 += dy;
+        cout << "Перемещение точки #" << id << " на (" << dx << ", " << dy << ")" << endl;
     }
     
     void rotate(double angle) override {
-        cout << "Поворот линии #" << getId() << " на " << angle << " градусов" << endl;
-        double centerX = (x + x2) / 2;
-        double centerY = (y + y2) / 2;
+        cout << "Точка #" << id << " не может быть повернута (метод не выполняет действий)" << endl;
+    }
+    
+    double getX() const { return x; }
+    double getY() const { return y; }
+    
+protected:
+    void setX(double newX) { x = newX; }
+    void setY(double newY) { y = newY; }
+};
+
+// Класс Line наследуется от Shape
+class Line : public Shape {
+private:
+    Point* p1;
+    Point* p2;
+public:
+    Line(double x1, double y1, double x2, double y2) {
+        p1 = new Point(x1, y1);
+        p2 = new Point(x2, y2);
+        cout << "Создана линия #" << id << " между точками #" 
+             << p1->getId() << " и #" << p2->getId() << endl;
+    }
+    
+    ~Line() override {
+        delete p1;
+        delete p2;
+        cout << "Удалена линия #" << id << endl;
+    }
+    
+    void draw() const override {
+        cout << "Рисуем линию #" << id << " от (" << p1->getX() << "," << p1->getY() 
+             << ") до (" << p2->getX() << "," << p2->getY() << ")" << endl;
+    }
+    
+    void hide() const override {
+        cout << "Скрываем линию #" << id << endl;
+    }
+    
+    void move(double dx, double dy) override {
+        p1->move(dx, dy);
+        p2->move(dx, dy);
+        cout << "Перемещение линии #" << id << " на (" << dx << ", " << dy << ")" << endl;
+    }
+    
+    void rotate(double angle) override {
+        double centerX = (p1->getX() + p2->getX()) / 2;
+        double centerY = (p1->getY() + p2->getY()) / 2;
         
         double rad = angle * PI / 180.0;
         double cosA = cos(rad);
         double sinA = sin(rad);
         
-        // Поворот первой точки относительно центра
-        double tx = x - centerX;
-        double ty = y - centerY;
-        x = centerX + tx * cosA - ty * sinA;
-        y = centerY + tx * sinA + ty * cosA;
+        // Поворот первой точки
+        double tx = p1->getX() - centerX;
+        double ty = p1->getY() - centerY;
+        p1->setX(centerX + tx * cosA - ty * sinA);
+        p1->setY(centerY + tx * sinA + ty * cosA);
         
-        // Поворот второй точки относительно центра
-        tx = x2 - centerX;
-        ty = y2 - centerY;
-        x2 = centerX + tx * cosA - ty * sinA;
-        y2 = centerY + tx * sinA + ty * cosA;
+        // Поворот второй точки
+        tx = p2->getX() - centerX;
+        ty = p2->getY() - centerY;
+        p2->setX(centerX + tx * cosA - ty * sinA);
+        p2->setY(centerY + tx * sinA + ty * cosA);
+        
+        cout << "Поворот линии #" << id << " на " << angle << " градусов" << endl;
     }
 };
 
-// Базовый класс для четырехугольников
-class Quadrilateral : virtual public Point {
+// Класс Quadrilateral наследуется от Shape
+class Quadrilateral : public Shape {
 protected:
-    std::vector<std::pair<double, double>> vertices;
-    double angle;
+    std::vector<std::unique_ptr<Point>> vertices;
 public:
-    Quadrilateral(double x, double y, const std::vector<std::pair<double, double>>& points) 
-        : Point(x, y), angle(0) {
+    Quadrilateral(const std::vector<std::pair<double, double>>& points) {
         for (const auto& p : points) {
-            vertices.emplace_back(x + p.first, y + p.second);
+            vertices.push_back(std::make_unique<Point>(p.first, p.second));
         }
-        cout << "Создан четырехугольник #" << getId() << endl;
+        cout << "Создан четырехугольник #" << id << " с " << vertices.size() << " вершинами" << endl;
     }
     
     void draw() const override {
-        cout << "Рисуем четырехугольник #" << getId() << " с вершинами:";
+        cout << "Рисуем четырехугольник #" << id << " с вершинами:";
         for (const auto& v : vertices) {
-            cout << " (" << v.first << "," << v.second << ")";
+            cout << " (" << v->getX() << "," << v->getY() << ")";
         }
         cout << endl;
     }
     
     void hide() const override {
-        cout << "Скрываем четырехугольник #" << getId() << endl;
+        cout << "Скрываем четырехугольник #" << id << endl;
     }
     
     void move(double dx, double dy) override {
-        cout << "Перемещение четырехугольника #" << getId() << " на (" << dx << ", " << dy << ")" << endl;
-        x += dx;
-        y += dy;
-        for (auto& v : vertices) {
-            v.first += dx;
-            v.second += dy;
+        for (const auto& v : vertices) {
+            v->move(dx, dy);
         }
+        cout << "Перемещение четырехугольника #" << id << " на (" << dx << ", " << dy << ")" << endl;
     }
     
     void rotate(double angle) override {
-        cout << "Поворот четырехугольника #" << getId() << " на " << angle << " градусов" << endl;
         double centerX = 0, centerY = 0;
         for (const auto& v : vertices) {
-            centerX += v.first;
-            centerY += v.second;
+            centerX += v->getX();
+            centerY += v->getY();
         }
         centerX /= vertices.size();
         centerY /= vertices.size();
@@ -151,112 +176,43 @@ public:
         double cosA = cos(rad);
         double sinA = sin(rad);
         
-        for (auto& v : vertices) {
-            double tx = v.first - centerX;
-            double ty = v.second - centerY;
-            v.first = centerX + tx * cosA - ty * sinA;
-            v.second = centerY + tx * sinA + ty * cosA;
+        for (const auto& v : vertices) {
+            double tx = v->getX() - centerX;
+            double ty = v->getY() - centerY;
+            v->setX(centerX + tx * cosA - ty * sinA);
+            v->setY(centerY + tx * sinA + ty * cosA);
         }
-        this->angle += angle;
+        
+        cout << "Поворот четырехугольника #" << id << " на " << angle << " градусов" << endl;
     }
 };
 
-// Класс Квадрат (используется для виртуального наследования)
-class Square : virtual public Quadrilateral {
+// Классы-наследники Quadrilateral
+class Square : public Quadrilateral {
 public:
-    Square(double x, double y, double side) 
-        : Point(x, y), 
-          Quadrilateral(x, y, {{-side/2, -side/2}, {side/2, -side/2}, 
-                              {side/2, side/2}, {-side/2, side/2}}) {
-        cout << "Создан квадрат #" << getId() << " со стороной " << side << endl;
-    }
-    
-    void draw() const override {
-        cout << "Рисуем квадрат #" << getId() << " с центром (" << x << "," << y 
-             << ") и стороной " << (vertices[1].first - vertices[0].first) << endl;
-    }
-    
-    void hide() const override {
-        cout << "Скрываем квадрат #" << getId() << endl;
+    Square(double side) : Quadrilateral({
+        {0, 0}, {side, 0}, {side, side}, {0, side}
+    }) {
+        cout << "Создан квадрат #" << id << " со стороной " << side << endl;
     }
 };
 
-// Класс Прямоугольник
 class Rectangle : public Quadrilateral {
 public:
-    Rectangle(double x, double y, double width, double height) 
-        : Quadrilateral(x, y, {{-width/2, -height/2}, {width/2, -height/2}, 
-                        {width/2, height/2}, {-width/2, height/2}}) {
-        cout << "Создан прямоугольник #" << getId() << " " << width << "x" << height << endl;
-    }
-    
-    void draw() const override {
-        cout << "Рисуем прямоугольник #" << getId() << " " 
-             << (vertices[1].first - vertices[0].first) << "x" 
-             << (vertices[2].second - vertices[1].second) << endl;
-    }
-    
-    void hide() const override {
-        cout << "Скрываем прямоугольник #" << getId() << endl;
+    Rectangle(double width, double height) : Quadrilateral({
+        {0, 0}, {width, 0}, {width, height}, {0, height}
+    }) {
+        cout << "Создан прямоугольник #" << id << " " << width << "x" << height << endl;
     }
 };
 
-// Класс Ромб
 class Rhombus : public Quadrilateral {
 public:
-    Rhombus(double x, double y, double diagonal1, double diagonal2) 
-        : Quadrilateral(x, y, {{0, -diagonal2/2}, {diagonal1/2, 0}, 
-                        {0, diagonal2/2}, {-diagonal1/2, 0}}) {
-        cout << "Создан ромб #" << getId() << " с диагоналями " 
-             << diagonal1 << " и " << diagonal2 << endl;
-    }
-    
-    void draw() const override {
-        cout << "Рисуем ромб #" << getId() << " с диагоналями " 
-             << (vertices[1].first - vertices[3].first) << " и " 
-             << (vertices[2].second - vertices[0].second) << endl;
-    }
-    
-    void hide() const override {
-        cout << "Скрываем ромб #" << getId() << endl;
-    }
-};
-
-// Класс Параллелограмм с виртуальным наследованием от Square
-class Parallelogram : public Square, virtual public Quadrilateral {
-private:
-    double angle;
-public:
-    Parallelogram(double x, double y, double base, double height, double angle) 
-        : Point(x, y), 
-          Quadrilateral(x, y, calculateVertices(base, height, angle)),
-          Square(x, y, base), 
-          angle(angle) {
-        cout << "Создан параллелограмм #" << getId() << " с основанием " << base 
-             << ", высотой " << height << " и углом " << angle << " градусов" << endl;
-    }
-    
-    void draw() const override {
-        cout << "Рисуем параллелограмм #" << getId() << " с основанием " 
-             << (vertices[1].first - vertices[0].first) 
-             << " и углом " << this->angle << " градусов" << endl;
-    }
-    
-    void hide() const override {
-        cout << "Скрываем параллелограмм #" << getId() << endl;
-    }
-    
-private:
-    static std::vector<std::pair<double, double>> calculateVertices(double base, double height, double angle) {
-        double rad = angle * PI / 180.0;
-        double sideShift = height / tan(rad);
-        
-        return {
-            {-base/2, -height/2},
-            {base/2, -height/2},
-            {base/2 + sideShift, height/2},
-            {-base/2 + sideShift, height/2}
-        };
+    Rhombus(double diagonal1, double diagonal2) : Quadrilateral({
+        {0, -diagonal2/2}, {diagonal1/2, 0}, 
+        {0, diagonal2/2}, {-diagonal1/2, 0}
+    }) {
+        cout << "Создан ромб #" << id << " с диагоналями " << diagonal1 << " и " << diagonal2 << endl;
     }
 };
 
@@ -264,55 +220,40 @@ private:
 
 int main() {
     using namespace Geometry;
+    using std::unique_ptr;
+    using std::make_unique;
 
-    cout << "\n=== Тестирование геометрических объектов ===" << endl;
+    cout << "\n=== Тестирование с указателями ===" << endl;
     
-    // Создание объектов
-    Line line(0, 0, 10, 10);
-    Square square(5, 5, 4);
-    Rectangle rectangle(2, 3, 6, 4);
-    Rhombus rhombus(7, 7, 8, 6);
-    Parallelogram parallelogram(1, 1, 5, 3, 60);
+    // Создание объектов через указатели
+    unique_ptr<Shape> shapes[] = {
+        make_unique<Point>(1, 2),
+        make_unique<Line>(0, 0, 3, 3),
+        make_unique<Square>(5),
+        make_unique<Rectangle>(4, 6),
+        make_unique<Rhombus>(8, 6)
+    };
 
-    // Демонстрация методов
-    cout << "\n=== Демонстрация методов ===" << endl;
-    line.draw();
-    line.move(5, 5);
-    line.rotate(45);
-    line.hide();
-
-    square.draw();
-    square.rotate(30);
-    square.hide();
-
-    rectangle.draw();
-    rectangle.move(2, 3);
-    rectangle.hide();
-
-    rhombus.draw();
-    rhombus.rotate(15);
-    rhombus.hide();
-
-    parallelogram.draw();
-    parallelogram.move(1, 1);
-    parallelogram.hide();
-
-    // Демонстрация полиморфизма (позднего связывания)
-    cout << "\n=== Демонстрация полиморфизма ===" << endl;
-    Point* shapes[] = {&line, &square, &rectangle, &rhombus, &parallelogram};
-    for (Point* shape : shapes) {
+    // Демонстрация полиморфизма
+    for (const auto& shape : shapes) {
         shape->draw();
         shape->move(1, 1);
-        shape->rotate(10);
+        shape->rotate(45);
         shape->hide();
         cout << "-----" << endl;
     }
 
-    // Проверка виртуального наследования
-    cout << "\n=== Проверка виртуального наследования ===" << endl;
-    Parallelogram* p = &parallelogram;
-    cout << "Координаты через Square: (" << p->Square::getX() << ", " << p->Square::getY() << ")" << endl;
-    cout << "Координаты через Quadrilateral: (" << p->Quadrilateral::getX() << ", " << p->Quadrilateral::getY() << ")" << endl;
+    // Создание составной фигуры
+    cout << "\n=== Составная фигура ===" << endl;
+    unique_ptr<Shape> composite[] = {
+        make_unique<Line>(0, 0, 10, 10),
+        make_unique<Square>(3),
+        make_unique<Point>(5, 5)
+    };
+
+    for (const auto& shape : composite) {
+        shape->draw();
+    }
 
     return 0;
 }
